@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Estação Meteorológica</title>
+    <style>
+        /* =========================================
+           ESTILOS (CSS PURO)
+           ========================================= */
+        :root {
+            --bg-color: #0b0e14;
+            --card-bg: #111520;
+            --text-main: #e8eaf0;
+            --text-muted: #8b90a0;
+            --border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Grid dos Cartões Principais */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px 18px 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-top-line {
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+        }
+
+        .card-header {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 4px 0;
+        }
+
+        .card-unit {
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .card-sub {
+            font-size: 11px;
+            color: #555c70;
+            margin-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding-top: 8px;
+        }
+
+        /* Seção Inferior: LDR e Tabela */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .bottom-section { grid-template-columns: 1fr; }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .badge-live { background: rgba(78, 203, 126, 0.1); color: #4ecb7e; border: 1px solid rgba(78, 203, 126, 0.2); }
+        .badge-info { background: rgba(77, 158, 255, 0.1); color: #4d9eff; border: 1px solid rgba(77, 158, 255, 0.2); }
+
+        /* Barra do LDR */
+        .ldr-labels { display: flex; justify-content: space-between; font-size: 11px; color: #555c70; margin-bottom: 6px; }
+        .ldr-track { height: 8px; background: #161b27; border-radius: 4px; overflow: hidden; }
+        .ldr-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #1d2436, #f7c85e); width: 0%; transition: width 0.5s ease; }
+
+        /* Tabela */
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { padding: 8px 12px; text-align: left; font-size: 11px; color: #555c70; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="grid">
+        <div class="card">
+            <div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div>
+            <div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div>
+            <div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div>
+            <div class="card-sub">Sensor de precisão BMP280</div>
+        </div>
+
+        <div class="card">
+            <div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div>
+            <div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div>
+            <div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div>
+            <div class="card-sub">Medido via sensor DHT11</div>
+        </div>
+
+        <div class="card">
+            <div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div>
+            <div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div>
+            <div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div>
+            <div class="card-sub" id="val-altitude">Altitude estimada: -- m</div>
+        </div>
+
+        <div class="card">
+            <div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div>
+            <div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div>
+            <div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div>
+            <div class="card-sub" id="val-chuva-sub">Último pulso: --:--:-- (0 cliques)</div>
+        </div>
+    </div>
+
+    <div class="bottom-section">
+        <div class="card" style="padding: 18px;">
+            <div class="panel-header">
+                Luminosidade (LDR)
+                <span class="badge badge-live">AO VIVO</span>
+            </div>
+            <div>
+                <div class="ldr-labels"><span>Escuro (0)</span><span>Claridade (1023)</span></div>
+                <div class="ldr-track"><div class="ldr-fill" id="ldr-bar"></div></div>
+            </div>
+            <div style="margin-top: 14px; font-size: 13px;">
+                Condição atual: <strong id="ldr-texto">--</strong>
+                <div style="color: #555c70; font-size: 12px; margin-top: 4px;" id="ldr-bruto">
+                    Valor bruto lido na porta A0: --
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 18px; overflow-x: auto;">
+            <div class="panel-header">
+                Últimas Atualizações no Histórico
+                <span class="badge badge-info">Recentes</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Temp.</th>
+                        <th>Umidade</th>
+                        <th>Pressão</th>
+                        <th>Chuva</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-historico">
+                    <tr><td colspan="5" style="text-align: center; color: #555c70;">Carregando dados...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // Importa as funções do Firebase direto do CDN oficial do Google
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+
+    // 1. Configuração do seu Banco (Apenas a URL é necessária para bancos abertos para leitura)
+    const firebaseConfig = {
+        databaseURL: "https://estacao-fisica-lab-if-default-rtdb.firebaseio.com"
+    };
+
+    // Inicializa o Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Função auxiliar para o texto do LDR
+    function getLDRLabel(v) {
+        if (v < 200) return "🌑 Muito escuro";
+        if (v < 400) return "🌥️ Nublado";
+        if (v < 700) return "⛅ Parcialmente nublado";
+        return "☀️ Plena luz solar";
+    }
+
+    // 2. Escutar os dados em TEMPO REAL (Nó /estacao)
+    const estacaoRef = ref(db, "estacao");
+    onValue(estacaoRef, (snapshot) => {
+        const dados = snapshot.val();
+        if (dados) {
+            // Atualiza os textos na tela
+            document.getElementById("val-temp").innerText = dados.temperatura ? dados.temperatura.toFixed(1) : "0.0";
+            document.getElementById("val-umid").innerText = dados.umidade ? dados.umidade.toFixed(0) : "0";
+            document.getElementById("val-pressao").innerText = dados.pressao ? dados.pressao.toFixed(1) : "0.0";
+            document.getElementById("val-altitude").innerText = `Altitude estimada: ${dados.altitude ? dados.altitude.toFixed(0) : "0"}m`;
+            
+            document.getElementById("val-chuva").innerText = dados.chuva_mm ? dados.chuva_mm.toFixed(2) : "0.00";
+            document.getElementById("val-chuva-sub").innerText = `Último pulso: ${dados.hora_ultima_chuva || "--:--:--"} (${dados.cliques_chuva || 0} cliques)`;
+
+            // Atualiza LDR
+            const ldr = dados.luminosidade || 0;
+            document.getElementById("ldr-texto").innerText = getLDRLabel(ldr);
+            document.getElementById("ldr-bruto").innerText = `Valor bruto lido na porta A0: ${ldr}`;
+            
+            // Calcula a porcentagem da barra (0 a 1023)
+            let percent = (ldr / 1023) * 100;
+            if(percent > 100) percent = 100;
+            if(percent < 0) percent = 0;
+            document.getElementById("ldr-bar").style.width = percent + "%";
+        }
+    });
+
+    // 3. Escutar o HISTÓRICO (Nó /historico)
+    const histRef = ref(db, "historico");
+    onValue(histRef, (snapshot) => {
+        const val = snapshot.val();
+        const tbody = document.getElementById("tabela-historico");
+        
+        if (val) {
+            // Converte o objeto do Firebase num array, inverte a ordem (mais novo primeiro) e pega os 5 primeiros
+            const lista = Object.values(val).reverse().slice(0, 5);
+            tbody.innerHTML = ""; // Limpa a tabela
+
+            lista.forEach(item => {
+                const tr = document.createElement("tr");
+                
+                const hora = item.hora || "--:--";
+                const temp = item.temperatura ? `${item.temperatura.toFixed(1)}°C` : "—";
+                const umi = item.umidade ? `${item.umidade.toFixed(0)}%` : "—";
+                const press = item.pressao ? `${item.pressao.toFixed(0)} hPa` : "—";
+                const chuva = item.chuva_mm ? `${item.chuva_mm.toFixed(2)} mm` : "0.00 mm";
+
+                tr.innerHTML = `
+                    <td>${hora}</td>
+                    <td style="color: #ff6b6b;">${temp}</td>
+                    <td style="color: #4d9eff;">${umi}</td>
+                    <td style="color: #38ef7d;">${press}</td>
+                    <td style="color: #5ecbe8;">${chuva}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #555c70;">Nenhum registro encontrado.</td></tr>`;
+        }
+    });
+</script>
+
+</body>
+</html>
