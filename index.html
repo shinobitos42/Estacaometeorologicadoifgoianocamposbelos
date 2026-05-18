@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Estação Meteorológica</title>
+    <title>Estação Meteorológica IoT</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         /* =========================================
-           ESTILOS (CSS PURO)
+           ESTILOS BASE E VARIÁVEIS
            ========================================= */
         :root {
             --bg-color: #0b0e14;
@@ -14,6 +19,7 @@
             --text-main: #e8eaf0;
             --text-muted: #8b90a0;
             --border-color: rgba(255, 255, 255, 0.06);
+            --accent: #4d9eff;
         }
 
         body {
@@ -21,267 +27,495 @@
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
+
+        /* Barra de Navegação Superior (Tabs) */
+        .navbar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 16px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         .container {
             max-width: 1000px;
-            margin: 0 auto;
+            margin: 24px auto;
             display: flex;
             flex-direction: column;
             gap: 24px;
+            padding: 0 20px;
         }
 
-        /* Grid dos Cartões Principais */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
+        /* Cartões Principais */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px 18px 16px; position: relative; overflow: hidden; }
+        .card-top-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .card-header { font-size: 13px; font-weight: 500; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .card-value { font-size: 28px; font-weight: 600; margin: 4px 0; }
+        .card-unit { font-size: 16px; font-weight: 400; color: var(--text-muted); }
+        .card-sub { font-size: 11px; color: #555c70; margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 8px; }
 
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px 18px 16px;
-            position: relative;
-            overflow: hidden;
-        }
+        /* Estilos Visuais Premium do LDR */
+        .ldr-container { text-align: center; margin: 24px 0 16px; }
+        .ldr-icon { font-size: 56px; margin-bottom: 12px; text-shadow: 0 4px 20px rgba(247, 200, 94, 0.2); transition: all 0.3s ease; }
+        .ldr-texto { font-size: 24px; font-weight: 700; transition: color 0.3s ease; }
+        .ldr-bruto { color: #555c70; font-size: 13px; margin-top: 8px; font-family: monospace; }
+        .ldr-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+        .ldr-track { height: 12px; background: #161b27; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .ldr-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #1d2436, #4d9eff, #f7c85e); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 10px; }
 
-        .card-top-line {
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 3px;
-        }
+        /* Filtros e Botões */
+        .filter-row { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-group select, .filter-group input { background: #161b27; border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); padding: 8px 12px; border-radius: 6px; font-size: 13px; outline: none; cursor: pointer; color-scheme: dark; }
+        .btn-filter { background: var(--accent); color: #fff; border: none; padding: 9px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; height: 37px; }
+        .btn-filter:hover { opacity: 0.8; }
+        .btn-pdf { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+        .filter-sub-group { display: flex; gap: 15px; flex-wrap: wrap; }
 
-        .card-header {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .card-value {
-            font-size: 28px;
-            font-weight: 600;
-            margin: 4px 0;
-        }
-
-        .card-unit {
-            font-size: 16px;
-            font-weight: 400;
-            color: var(--text-muted);
-        }
-
-        .card-sub {
-            font-size: 11px;
-            color: #555c70;
-            margin-top: 8px;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            padding-top: 8px;
-        }
-
-        /* Seção Inferior: LDR e Tabela */
-        .bottom-section {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .bottom-section { grid-template-columns: 1fr; }
-        }
-
-        .panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-
-        .badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .badge-live { background: rgba(78, 203, 126, 0.1); color: #4ecb7e; border: 1px solid rgba(78, 203, 126, 0.2); }
-        .badge-info { background: rgba(77, 158, 255, 0.1); color: #4d9eff; border: 1px solid rgba(77, 158, 255, 0.2); }
-
-        /* Barra do LDR */
-        .ldr-labels { display: flex; justify-content: space-between; font-size: 11px; color: #555c70; margin-bottom: 6px; }
-        .ldr-track { height: 8px; background: #161b27; border-radius: 4px; overflow: hidden; }
-        .ldr-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #1d2436, #f7c85e); width: 0%; transition: width 0.5s ease; }
-
-        /* Tabela */
+        /* Tabelas */
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { padding: 8px 12px; text-align: left; font-size: 11px; color: #555c70; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        th { padding: 10px 12px; text-align: left; font-size: 11px; color: #555c70; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        td { padding: 12px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+        /* Badges e Diversos */
+        .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 600; letter-spacing: 0.5px; }
+        .badge-live { background: rgba(78, 203, 126, 0.1); color: #4ecb7e; border: 1px solid rgba(78, 203, 126, 0.2); }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
     </style>
 </head>
 <body>
 
+<nav class="navbar">
+    <button class="tab-btn active" onclick="abrirAba('aba-painel')">📊 Painel em Tempo Real</button>
+    <button class="tab-btn" onclick="abrirAba('aba-historico')">📅 Buscar no Histórico</button>
+    <button class="tab-btn" onclick="abrirAba('aba-graficos')">📈 Gráficos</button>
+</nav>
+
 <div class="container">
-    <div class="grid">
-        <div class="card">
-            <div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div>
-            <div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div>
-            <div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div>
-            <div class="card-sub">Sensor de precisão BMP280</div>
+
+    <div id="aba-painel" class="tab-content active">
+        <div class="grid">
+            <div class="card">
+                <div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div>
+                <div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div>
+                <div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div>
+                <div class="card-sub">Sensor BMP280</div>
+            </div>
+
+            <div class="card">
+                <div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div>
+                <div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div>
+                <div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div>
+                <div class="card-sub">Sensor DHT11</div>
+            </div>
+
+            <div class="card">
+                <div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div>
+                <div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div>
+                <div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div>
+                <div class="card-sub" id="val-altitude">Altitude estimada: -- m</div>
+            </div>
+
+            <div class="card">
+                <div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div>
+                <div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div>
+                <div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div>
+                <div class="card-sub" id="val-chuva-sub">Último pulso: --:--:--</div>
+            </div>
         </div>
 
-        <div class="card">
-            <div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div>
-            <div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div>
-            <div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div>
-            <div class="card-sub">Medido via sensor DHT11</div>
-        </div>
-
-        <div class="card">
-            <div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div>
-            <div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div>
-            <div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div>
-            <div class="card-sub" id="val-altitude">Altitude estimada: -- m</div>
-        </div>
-
-        <div class="card">
-            <div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div>
-            <div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div>
-            <div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div>
-            <div class="card-sub" id="val-chuva-sub">Último pulso: --:--:-- (0 cliques)</div>
-        </div>
-    </div>
-
-    <div class="bottom-section">
-        <div class="card" style="padding: 18px;">
-            <div class="panel-header">
-                Luminosidade (LDR)
+        <div class="card" style="margin-top: 24px; padding: 24px 30px;">
+            <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
+                <span>Monitoramento de Luminosidade (LDR)</span>
                 <span class="badge badge-live">AO VIVO</span>
             </div>
-            <div>
-                <div class="ldr-labels"><span>Escuro (0)</span><span>Claridade (1023)</span></div>
-                <div class="ldr-track"><div class="ldr-fill" id="ldr-bar"></div></div>
+            
+            <div class="ldr-container">
+                <div class="ldr-icon" id="ldr-icon">--</div>
+                <div class="ldr-texto" id="ldr-texto">Aguardando dados...</div>
+                <div class="ldr-bruto" id="ldr-bruto">Valor bruto A0: -- / 1023</div>
             </div>
-            <div style="margin-top: 14px; font-size: 13px;">
-                Condição atual: <strong id="ldr-texto">--</strong>
-                <div style="color: #555c70; font-size: 12px; margin-top: 4px;" id="ldr-bruto">
-                    Valor bruto lido na porta A0: --
+
+            <div style="margin-top: 30px;">
+                <div class="ldr-labels">
+                    <span>Breu Total (0)</span>
+                    <span>Pleno Sol (1023)</span>
+                </div>
+                <div class="ldr-track">
+                    <div class="ldr-fill" id="ldr-bar"></div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="card" style="padding: 18px; overflow-x: auto;">
-            <div class="panel-header">
-                Últimas Atualizações no Histórico
-                <span class="badge badge-info">Recentes</span>
+    <div id="aba-historico" class="tab-content">
+        <div class="card">
+            <div class="panel-header">Filtros Avançados e Relatórios</div>
+            
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Tipo de Busca</label>
+                    <select id="tipo-busca" onchange="alternarCamposFiltro()">
+                        <option value="especifica">Data Específica</option>
+                        <option value="periodo">Período Customizado (Intervalo)</option>
+                    </select>
+                </div>
+
+                <div id="grupo-especifico" class="filter-sub-group">
+                    <div class="filter-group">
+                        <label>Dia</label>
+                        <select id="filtro-dia">
+                            <option value="todos">Todos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Mês</label>
+                        <select id="filtro-mes">
+                            <option value="todos">Todos</option>
+                            <option value="01">Janeiro</option>
+                            <option value="02">Fevereiro</option>
+                            <option value="03">Março</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Maio</option>
+                            <option value="06">Junho</option>
+                            <option value="07">Julho</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Ano</label>
+                        <select id="filtro-ano">
+                            <option value="todos">Todos</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="grupo-periodo" class="filter-sub-group" style="display: none;">
+                    <div class="filter-group"><label>Data Inicial</label><input type="date" id="data-inicio"></div>
+                    <div class="filter-group"><label>Data Final</label><input type="date" id="data-fim"></div>
+                </div>
+
+                <button class="btn-filter" onclick="aplicarFiltros()">🔍 Filtrar</button>
+                <button class="btn-filter btn-pdf" onclick="exportarPDF()">⬇️ Exportar PDF</button>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Temp.</th>
-                        <th>Umidade</th>
-                        <th>Pressão</th>
-                        <th>Chuva</th>
-                    </tr>
-                </thead>
-                <tbody id="tabela-historico">
-                    <tr><td colspan="5" style="text-align: center; color: #555c70;">Carregando dados...</td></tr>
-                </tbody>
-            </table>
+
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>Temp.</th>
+                            <th>Umidade</th>
+                            <th>Pressão</th>
+                            <th>Altitude</th>
+                            <th>Luz (LDR)</th>
+                            <th>Chuva Acum.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-busca">
+                        <tr><td colspan="8" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="aba-graficos" class="tab-content">
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="panel-header">Gráfico de Precipitação (Chuva)</div>
+            <canvas id="graficoChuva" height="80"></canvas>
+        </div>
+
+        <div class="card">
+            <div class="panel-header">Gráfico de Vento (Anemômetro)</div>
+            <canvas id="graficoVento" height="80"></canvas>
         </div>
     </div>
 </div>
 
 <script type="module">
-    // Importa as funções do Firebase direto do CDN oficial do Google
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
-    // 1. Configuração do seu Banco (Apenas a URL é necessária para bancos abertos para leitura)
     const firebaseConfig = {
         databaseURL: "https://estacao-fisica-lab-if-default-rtdb.firebaseio.com"
     };
-
-    // Inicializa o Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Função auxiliar para o texto do LDR
-    function getLDRLabel(v) {
-        if (v < 200) return "🌑 Muito escuro";
-        if (v < 400) return "🌥️ Nublado";
-        if (v < 700) return "⛅ Parcialmente nublado";
-        return "☀️ Plena luz solar";
+    window.historicoGlobal = [];
+    window.dadosAtuaisFiltro = []; // Variável que o PDF vai usar para imprimir
+
+    const comboDias = document.getElementById("filtro-dia");
+    for (let i = 1; i <= 31; i++) {
+        let d = String(i).padStart(2, '0');
+        let opt = document.createElement("option");
+        opt.value = d; opt.innerText = d;
+        comboDias.appendChild(opt);
     }
 
-    // 2. Escutar os dados em TEMPO REAL (Nó /estacao)
+    // Leitura em Tempo Real (Painel)
     const estacaoRef = ref(db, "estacao");
     onValue(estacaoRef, (snapshot) => {
         const dados = snapshot.val();
         if (dados) {
-            // Atualiza os textos na tela
             document.getElementById("val-temp").innerText = dados.temperatura ? dados.temperatura.toFixed(1) : "0.0";
             document.getElementById("val-umid").innerText = dados.umidade ? dados.umidade.toFixed(0) : "0";
             document.getElementById("val-pressao").innerText = dados.pressao ? dados.pressao.toFixed(1) : "0.0";
             document.getElementById("val-altitude").innerText = `Altitude estimada: ${dados.altitude ? dados.altitude.toFixed(0) : "0"}m`;
-            
             document.getElementById("val-chuva").innerText = dados.chuva_mm ? dados.chuva_mm.toFixed(2) : "0.00";
-            document.getElementById("val-chuva-sub").innerText = `Último pulso: ${dados.hora_ultima_chuva || "--:--:--"} (${dados.cliques_chuva || 0} cliques)`;
-
-            // Atualiza LDR
-            const ldr = dados.luminosidade || 0;
-            document.getElementById("ldr-texto").innerText = getLDRLabel(ldr);
-            document.getElementById("ldr-bruto").innerText = `Valor bruto lido na porta A0: ${ldr}`;
+            document.getElementById("val-chuva-sub").innerText = `Último pulso: ${dados.hora_ultima_chuva || "--:--:--"}`;
             
-            // Calcula a porcentagem da barra (0 a 1023)
-            let percent = (ldr / 1023) * 100;
-            if(percent > 100) percent = 100;
-            if(percent < 0) percent = 0;
+            let ldr = dados.luminosidade || 0;
+            let ldrLabel = "Plena luz solar"; let ldrIcon = "☀️"; let ldrColor = "#f7c85e"; 
+
+            if (ldr < 200) { ldrLabel = "Muito escuro"; ldrIcon = "🌑"; ldrColor = "#8b90a0"; } 
+            else if (ldr < 400) { ldrLabel = "Nublado"; ldrIcon = "🌥️"; ldrColor = "#4d9eff"; } 
+            else if (ldr < 700) { ldrLabel = "Parcialmente nublado"; ldrIcon = "⛅"; ldrColor = "#5ecbe8"; }
+            
+            document.getElementById("ldr-texto").innerText = ldrLabel;
+            document.getElementById("ldr-texto").style.color = ldrColor;
+            document.getElementById("ldr-icon").innerText = ldrIcon;
+            document.getElementById("ldr-bruto").innerText = `Valor bruto do ADC: ${ldr} / 1023`;
+            
+            let percent = Math.min(Math.max((ldr / 1023) * 100, 0), 100);
             document.getElementById("ldr-bar").style.width = percent + "%";
         }
     });
 
-    // 3. Escutar o HISTÓRICO (Nó /historico)
+    // Leitura do Histórico
     const histRef = ref(db, "historico");
     onValue(histRef, (snapshot) => {
         const val = snapshot.val();
-        const tbody = document.getElementById("tabela-historico");
-        
         if (val) {
-            // Converte o objeto do Firebase num array, inverte a ordem (mais novo primeiro) e pega os 5 primeiros
-            const lista = Object.values(val).reverse().slice(0, 5);
-            tbody.innerHTML = ""; // Limpa a tabela
-
-            lista.forEach(item => {
-                const tr = document.createElement("tr");
-                
-                const hora = item.hora || "--:--";
-                const temp = item.temperatura ? `${item.temperatura.toFixed(1)}°C` : "—";
-                const umi = item.umidade ? `${item.umidade.toFixed(0)}%` : "—";
-                const press = item.pressao ? `${item.pressao.toFixed(0)} hPa` : "—";
-                const chuva = item.chuva_mm ? `${item.chuva_mm.toFixed(2)} mm` : "0.00 mm";
-
-                tr.innerHTML = `
-                    <td>${hora}</td>
-                    <td style="color: #ff6b6b;">${temp}</td>
-                    <td style="color: #4d9eff;">${umi}</td>
-                    <td style="color: #38ef7d;">${press}</td>
-                    <td style="color: #5ecbe8;">${chuva}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } else {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #555c70;">Nenhum registro encontrado.</td></tr>`;
+            window.historicoGlobal = Object.values(val).reverse();
+            aplicarFiltros();
+            atualizarGraficos(window.historicoGlobal.slice(0, 15).reverse());
         }
     });
+
+    // Lógica de Filtragem e Renderização da Tabela
+    window.aplicarFiltros = function() {
+        const tipoBusca = document.getElementById("tipo-busca").value;
+        const tbody = document.getElementById("tabela-busca");
+        tbody.innerHTML = ""; 
+
+        const dadosFiltrados = window.historicoGlobal.filter(item => {
+            if (!item.data) return false;
+            const partesData = item.data.split("/"); 
+            if (partesData.length !== 3) return false;
+
+            if (tipoBusca === "especifica") {
+                const diaSel = document.getElementById("filtro-dia").value;
+                const mesSel = document.getElementById("filtro-mes").value;
+                const anoSel = document.getElementById("filtro-ano").value;
+                return (diaSel === "todos" || diaSel === partesData[0]) && 
+                       (mesSel === "todos" || mesSel === partesData[1]) && 
+                       (anoSel === "todos" || anoSel === partesData[2]);
+
+            } else {
+                const startStr = document.getElementById("data-inicio").value; 
+                const endStr = document.getElementById("data-fim").value;     
+                if (!startStr || !endStr) return true; 
+
+                const dataItem = new Date(parseInt(partesData[2]), parseInt(partesData[1]) - 1, parseInt(partesData[0]));
+                return dataItem >= new Date(startStr + "T00:00:00") && dataItem <= new Date(endStr + "T23:59:59");
+            }
+        });
+
+        window.dadosAtuaisFiltro = dadosFiltrados; // Salva para o PDF usar
+
+        if (dadosFiltrados.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #555c70; padding: 30px;">Nenhum registro encontrado.</td></tr>`;
+            return;
+        }
+
+        dadosFiltrados.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td style="color: #e8eaf0; font-weight: 500;">${item.data || "--/--/----"}</td>
+                <td style="font-family: monospace; color: #8b90a0;">${item.hora || "--:--"}</td>
+                <td style="color: #ff6b6b;">${item.temperatura ? item.temperatura.toFixed(1) + "°C" : "—"}</td>
+                <td style="color: #4d9eff;">${item.umidade ? item.umidade.toFixed(0) + "%" : "—"}</td>
+                <td style="color: #38ef7d;">${item.pressao ? item.pressao.toFixed(0) + " hPa" : "—"}</td>
+                <td style="color: #a8e6cf;">${item.altitude ? item.altitude.toFixed(0) + " m" : "—"}</td>
+                <td style="color: #f7c85e;">${item.luminosidade || 0} luz</td>
+                <td style="color: #5ecbe8; font-weight: bold;">${item.chuva_mm ? item.chuva_mm.toFixed(2) + " mm" : "0.00 mm"}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+</script>
+
+<script>
+    // ----------------------------------------------------
+    // FUNÇÃO GERADORA DO PDF CORPORATIVO
+    // ----------------------------------------------------
+    function exportarPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        const rows = window.dadosAtuaisFiltro;
+
+        if(!rows || rows.length === 0) {
+            alert("Não há dados na tabela para exportar. Tente alterar o filtro.");
+            return;
+        }
+
+        // Cabeçalho da página
+        doc.setFontSize(22);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont("helvetica", "bold");
+        doc.text("EstAção IoT", 14, 22);
+
+        doc.setFontSize(11);
+        doc.setTextColor(108, 117, 125);
+        doc.setFont("helvetica", "normal");
+        doc.text("Relatório Oficial de Monitoramento Meteorológico", 14, 29);
+        
+        // Linha Azul de Destaque
+        doc.setDrawColor(77, 158, 255);
+        doc.setLineWidth(0.8);
+        doc.line(14, 34, 196, 34);
+
+        doc.setFontSize(10);
+        doc.setTextColor(73, 80, 87);
+        doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, 14, 42);
+
+        // Caixa de Resumo (Background Cinza)
+        doc.setDrawColor(222, 226, 230);
+        doc.setFillColor(248, 249, 250);
+        doc.roundedRect(14, 47, 182, 18, 2, 2, "FD");
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Total de Registros: ${rows.length}`, 20, 57);
+
+        // Calcula a chuva total somando apenas o valor máximo de cada dia
+        const maxPorDia = {};
+        rows.forEach(r => {
+            const val = Number(r.chuva_mm) || 0;
+            if(r.data && (maxPorDia[r.data] === undefined || val > maxPorDia[r.data])) {
+                maxPorDia[r.data] = val;
+            }
+        });
+        const totalChuva = Object.values(maxPorDia).reduce((a, b) => a + b, 0).toFixed(1);
+
+        doc.text(`Chuva Total Acumulada no Período: ${totalChuva} mm`, 90, 57);
+
+        // Formatação dos Dados da Tabela
+        const bodyData = rows.map(r => [
+            r.data || "--/--/----",
+            r.hora || "--:--",
+            r.temperatura ? r.temperatura.toFixed(1) + "°C" : "—",
+            r.umidade ? r.umidade.toFixed(0) + "%" : "—",
+            r.pressao ? r.pressao.toFixed(0) + " hPa" : "—",
+            r.altitude ? r.altitude.toFixed(0) + " m" : "—",
+            (r.luminosidade || 0) + " luz",
+            r.chuva_mm ? r.chuva_mm.toFixed(2) + " mm" : "0.00 mm"
+        ]);
+
+        // Desenha a Tabela usando o plugin AutoTable
+        doc.autoTable({
+            startY: 70,
+            head: [["Data", "Hora", "Temp.", "Umidade", "Pressão", "Altitude", "Luz (LDR)", "Chuva Acum."]],
+            body: bodyData,
+            theme: 'grid',
+            headStyles: { fillColor: [77, 158, 255], textColor: 255, fontStyle: "bold", fontSize: 9 },
+            styles: { fontSize: 9, textColor: [73, 80, 87], cellPadding: 4, lineColor: [222, 226, 230], lineWidth: 0.1 },
+            alternateRowStyles: { fillColor: [248, 249, 250] },
+        });
+
+        // Dispara o download
+        doc.save(`Relatorio-EstacaoIoT-${Date.now()}.pdf`);
+    }
+
+    // ----------------------------------------------------
+    // FUNÇÕES DE INTERFACE
+    // ----------------------------------------------------
+    function alternarCamposFiltro() {
+        const tipo = document.getElementById("tipo-busca").value;
+        if (tipo === "especifica") {
+            document.getElementById("grupo-especifico").style.display = "flex";
+            document.getElementById("grupo-periodo").style.display = "none";
+        } else {
+            document.getElementById("grupo-especifico").style.display = "none";
+            document.getElementById("grupo-periodo").style.display = "flex";
+        }
+    }
+
+    function abrirAba(abaId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(abaId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // ----------------------------------------------------
+    // GRÁFICOS (CHART.JS)
+    // ----------------------------------------------------
+    let chartChuva, chartVento;
+    function inicializarGraficos() {
+        Chart.defaults.color = '#8b90a0'; Chart.defaults.font.family = '-apple-system, sans-serif';
+
+        const ctxChuva = document.getElementById('graficoChuva').getContext('2d');
+        chartChuva = new Chart(ctxChuva, {
+            type: 'bar',
+            data: { labels: [], datasets: [{ label: 'Chuva Acumulada (mm)', data: [], backgroundColor: '#5ecbe8', borderRadius: 4 }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+        });
+
+        const ctxVento = document.getElementById('graficoVento').getContext('2d');
+        chartVento = new Chart(ctxVento, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Velocidade do Vento (km/h)', data: [], borderColor: '#f7c85e', backgroundColor: 'rgba(247,200,94,0.1)', borderWidth: 2, fill: true, tension: 0.3 }] },
+            options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+        });
+    }
+
+    function atualizarGraficos(dadosRecentes) {
+        if (!chartChuva || !chartVento) inicializarGraficos();
+
+        const labelsGrafico = dadosRecentes.map(item => item.hora || "");
+        const dadosChuva = dadosRecentes.map(item => item.chuva_mm || 0);
+        const dadosVento = dadosRecentes.map(item => item.vento_kmh || 0); 
+
+        chartChuva.data.labels = labelsGrafico; chartChuva.data.datasets[0].data = dadosChuva; chartChuva.update();
+        chartVento.data.labels = labelsGrafico; chartVento.data.datasets[0].data = dadosVento; chartVento.update();
+    }
 </script>
 
 </body>
