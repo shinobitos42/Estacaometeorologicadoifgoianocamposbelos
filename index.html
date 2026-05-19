@@ -31,6 +31,12 @@
             padding-bottom: 40px;
         }
 
+        /* Custom Scrollbar Premium */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: #2a3143; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
         /* Cabeçalho Institucional */
         .main-header {
             background: var(--card-bg);
@@ -42,14 +48,46 @@
         .main-subtitle { margin: 8px 0 0 0; font-size: 14px; color: var(--accent); font-weight: 500; }
         .main-credits { margin: 6px 0 0 0; font-size: 12px; color: var(--text-muted); }
 
+        /* NOVO LAYOUT DO DASHBOARD (2 Colunas no PC) */
+        .main-layout {
+            max-width: 1400px; /* Mais largo para caber a barra lateral */
+            margin: 24px auto;
+            display: flex;
+            flex-direction: column; /* Celular primeiro */
+            gap: 24px;
+            padding: 0 20px;
+        }
+
+        .content-area { flex: 1; min-width: 0; }
+        
+        .sidebar-area {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Media Query para Computadores */
+        @media (min-width: 992px) {
+            .main-layout { flex-direction: row; align-items: flex-start; }
+            .sidebar-area {
+                width: 350px;
+                flex-shrink: 0;
+                position: sticky;
+                top: 24px;
+                height: calc(100vh - 48px); /* Ocupa a altura da tela no PC */
+            }
+        }
+
         /* Barra de Navegação Superior (Tabs) */
         .navbar {
             background: var(--card-bg);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0 10px;
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 5px;
             justify-content: center;
+            margin-bottom: 24px;
         }
 
         .tab-btn {
@@ -61,8 +99,6 @@
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        .container { max-width: 1100px; margin: 24px auto; display: flex; flex-direction: column; gap: 24px; padding: 0 20px; }
 
         /* Cartões Principais */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
@@ -103,7 +139,10 @@
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
 
         /* SEÇÃO DE COMENTÁRIOS */
-        .comment-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .comments-wrapper { display: flex; flex-direction: column; height: 100%; max-height: 550px; }
+        @media (min-width: 992px) { .comments-wrapper { max-height: 100%; } }
+        
+        .comment-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
         .comment-form input, .comment-form textarea {
             background: #161b27; border: 1px solid rgba(255,255,255,0.1); color: var(--text-main);
             padding: 12px 16px; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; resize: vertical; transition: 0.3s;
@@ -115,6 +154,15 @@
         .comment-date { font-size: 11px; color: var(--text-muted); }
         .comment-text { font-size: 14px; color: var(--text-main); line-height: 1.6; }
         
+        .comments-list-scroll {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 5px;
+        }
+
         /* Estilo da mensagem vazia */
         .empty-mural { text-align: center; color: var(--text-main); font-size: 14px; padding: 30px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1); }
         .empty-mural span { color: var(--accent); font-weight: bold; font-size: 16px; display: block; margin-bottom: 8px; }
@@ -128,111 +176,111 @@
     <p class="main-credits">Desenvolvido por Luis Abreu, Prof. Marcelo Brandão e Gusthavo D. Olivera</p>
 </header>
 
-<nav class="navbar">
-    <button class="tab-btn active" onclick="abrirAba('aba-painel')">📊 Painel em Tempo Real</button>
-    <button class="tab-btn" onclick="abrirAba('aba-historico')">📅 Buscar no Histórico</button>
-    <button class="tab-btn" onclick="abrirAba('aba-graficos')">📈 Gráficos</button>
-</nav>
+<div class="main-layout">
+    
+    <div class="content-area">
+        
+        <nav class="navbar">
+            <button class="tab-btn active" onclick="abrirAba('aba-painel')">📊 Painel em Tempo Real</button>
+            <button class="tab-btn" onclick="abrirAba('aba-historico')">📅 Buscar no Histórico</button>
+            <button class="tab-btn" onclick="abrirAba('aba-graficos')">📈 Gráficos</button>
+        </nav>
 
-<div class="container">
-
-    <div id="aba-painel" class="tab-content active">
-        <div class="grid">
-            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div><div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div><div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div><div class="card-sub">Sensor BMP280</div></div>
-            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div><div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div><div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div><div class="card-sub">Sensor DHT11</div></div>
-            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div><div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div><div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div><div class="card-sub">Sensor BMP280</div></div>
-            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #b5179e, #7209b7);"></div><div class="card-header">Altitude Estimada <span style="font-size: 16px;">⛰️</span></div><div class="card-value" style="color: #b5179e;"><span id="val-altitude">--</span><span class="card-unit"> m</span></div><div class="card-sub">Sensor BMP280</div></div>
-            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div><div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div><div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div><div class="card-sub" id="val-chuva-sub">Último pulso: --:--:--</div></div>
-            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #f7c85e, #f9d98e);"></div><div class="card-header">Vento <span style="font-size: 16px;">💨</span></div><div class="card-value" style="color: #f7c85e;"><span id="val-vento">--</span><span class="card-unit"> km/h</span></div><div class="card-sub">Sensor Hall U1881</div></div>
-        </div>
-
-        <div class="card" style="margin-top: 24px; padding: 24px 30px;">
-            <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
-                <span>Monitoramento de Luminosidade (LDR)</span>
-                <span class="badge badge-live">AO VIVO</span>
+        <div id="aba-painel" class="tab-content active">
+            <div class="grid">
+                <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div><div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div><div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div>
+                <div class="card-sub">Sensor DHT11</div></div> <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div><div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div><div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div><div class="card-sub">Sensor DHT11</div></div>
+                <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div><div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div><div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div><div class="card-sub">Sensor BMP280</div></div>
+                <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #b5179e, #7209b7);"></div><div class="card-header">Altitude Estimada <span style="font-size: 16px;">⛰️</span></div><div class="card-value" style="color: #b5179e;"><span id="val-altitude">--</span><span class="card-unit"> m</span></div><div class="card-sub">Sensor BMP280</div></div>
+                <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div><div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div><div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div><div class="card-sub" id="val-chuva-sub">Último pulso: --:--:--</div></div>
+                <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #f7c85e, #f9d98e);"></div><div class="card-header">Vento <span style="font-size: 16px;">💨</span></div><div class="card-value" style="color: #f7c85e;"><span id="val-vento">--</span><span class="card-unit"> km/h</span></div><div class="card-sub">Sensor Hall U1881</div></div>
             </div>
-            <div class="ldr-container">
-                <div class="ldr-icon" id="ldr-icon">--</div>
-                <div class="ldr-texto" id="ldr-texto">Aguardando dados...</div>
-                <div class="ldr-bruto" id="ldr-bruto">Valor bruto A0: -- / 1023</div>
-            </div>
-            <div style="margin-top: 30px;">
-                <div class="ldr-labels"><span>Breu Total (0)</span><span>Pleno Sol (1023)</span></div>
-                <div class="ldr-track"><div class="ldr-fill" id="ldr-bar"></div></div>
-            </div>
-        </div>
-    </div>
 
-    <div id="aba-historico" class="tab-content">
-        <div class="card">
-            <div class="panel-header">Filtros Avançados e Relatórios</div>
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label>Tipo de Busca</label>
-                    <select id="tipo-busca" onchange="alternarCamposFiltro()">
-                        <option value="especifica">Data Específica</option>
-                        <option value="periodo">Período Customizado (Intervalo)</option>
-                    </select>
+            <div class="card" style="margin-top: 24px; padding: 24px 30px;">
+                <div class="panel-header" style="border-bottom: none; padding-bottom: 0;">
+                    <span>Monitoramento de Luminosidade (LDR)</span>
+                    <span class="badge badge-live">AO VIVO</span>
                 </div>
-                <div id="grupo-especifico" class="filter-sub-group">
-                    <div class="filter-group"><label>Dia</label><select id="filtro-dia"><option value="todos">Todos</option></select></div>
+                <div class="ldr-container">
+                    <div class="ldr-icon" id="ldr-icon">--</div>
+                    <div class="ldr-texto" id="ldr-texto">Aguardando dados...</div>
+                    <div class="ldr-bruto" id="ldr-bruto">Valor bruto A0: -- / 1023</div>
+                </div>
+                <div style="margin-top: 30px;">
+                    <div class="ldr-labels"><span>Breu Total (0)</span><span>Pleno Sol (1023)</span></div>
+                    <div class="ldr-track"><div class="ldr-fill" id="ldr-bar"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="aba-historico" class="tab-content">
+            <div class="card">
+                <div class="panel-header">Filtros Avançados e Relatórios</div>
+                <div class="filter-row">
                     <div class="filter-group">
-                        <label>Mês</label>
-                        <select id="filtro-mes">
-                            <option value="todos">Todos</option>
-                            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
-                            <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
-                            <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
-                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                        <label>Tipo de Busca</label>
+                        <select id="tipo-busca" onchange="alternarCamposFiltro()">
+                            <option value="especifica">Data Específica</option>
+                            <option value="periodo">Período Customizado (Intervalo)</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label>Ano</label>
-                        <select id="filtro-ano"><option value="todos">Todos</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select>
+                    <div id="grupo-especifico" class="filter-sub-group">
+                        <div class="filter-group"><label>Dia</label><select id="filtro-dia"><option value="todos">Todos</option></select></div>
+                        <div class="filter-group">
+                            <label>Mês</label>
+                            <select id="filtro-mes">
+                                <option value="todos">Todos</option>
+                                <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                                <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                                <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                                <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Ano</label>
+                            <select id="filtro-ano"><option value="todos">Todos</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select>
+                        </div>
                     </div>
+                    <div id="grupo-periodo" class="filter-sub-group" style="display: none;">
+                        <div class="filter-group"><label>Data Inicial</label><input type="date" id="data-inicio"></div>
+                        <div class="filter-group"><label>Data Final</label><input type="date" id="data-fim"></div>
+                    </div>
+                    <button class="btn-filter" onclick="aplicarFiltros()">🔍 Filtrar</button>
+                    <button class="btn-filter btn-pdf" onclick="exportarPDF()">⬇️ Exportar PDF</button>
                 </div>
-                <div id="grupo-periodo" class="filter-sub-group" style="display: none;">
-                    <div class="filter-group"><label>Data Inicial</label><input type="date" id="data-inicio"></div>
-                    <div class="filter-group"><label>Data Final</label><input type="date" id="data-fim"></div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead><tr><th>Data</th><th>Hora</th><th>Temp.</th><th>Umidade</th><th>Pressão</th><th>Altitude</th><th>Luz</th><th>Vento</th><th>Chuva Acum.</th></tr></thead>
+                        <tbody id="tabela-busca"><tr><td colspan="9" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr></tbody>
+                    </table>
                 </div>
-                <button class="btn-filter" onclick="aplicarFiltros()">🔍 Filtrar</button>
-                <button class="btn-filter btn-pdf" onclick="exportarPDF()">⬇️ Exportar PDF</button>
-            </div>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead><tr><th>Data</th><th>Hora</th><th>Temp.</th><th>Umidade</th><th>Pressão</th><th>Altitude</th><th>Luz</th><th>Vento</th><th>Chuva Acum.</th></tr></thead>
-                    <tbody id="tabela-busca"><tr><td colspan="9" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr></tbody>
-                </table>
             </div>
         </div>
-    </div>
 
-    <div id="aba-graficos" class="tab-content">
-        <div class="card" style="margin-bottom: 24px;"><div class="panel-header">Gráfico de Precipitação (Chuva)</div><canvas id="graficoChuva" height="80"></canvas></div>
-        <div class="card"><div class="panel-header">Gráfico de Vento (Anemômetro)</div><canvas id="graficoVento" height="80"></canvas></div>
-    </div>
-
-    <div class="card" style="margin-top: 30px;">
-        <div class="panel-header" style="border-bottom: none;">
-            <span style="font-size: 18px;">💬 Mural de Mensagens</span>
-        </div>
-        
-        <div class="comment-form">
-            <input type="text" id="comentario-nome" placeholder="Seu nome (Ex: João Silva)" maxlength="50">
-            <textarea id="comentario-texto" rows="3" placeholder="✨ Deixe uma mensagem para a gente! Sugestões e feedbacks são bem vindos!" maxlength="300"></textarea>
-            <button class="btn-filter" id="btn-enviar-comentario" onclick="enviarComentario()" style="width: 200px; background: #38ef7d; color: #000;">➕ Enviar Mensagem</button>
+        <div id="aba-graficos" class="tab-content">
+            <div class="card" style="margin-bottom: 24px;"><div class="panel-header">Gráfico de Precipitação (Chuva)</div><canvas id="graficoChuva" height="80"></canvas></div>
+            <div class="card"><div class="panel-header">Gráfico de Vento (Anemômetro)</div><canvas id="graficoVento" height="80"></canvas></div>
         </div>
 
-        <div style="height: 1px; background: var(--border-color); margin: 20px 0;"></div>
+    </div> <div class="sidebar-area">
+        <div class="card comments-wrapper">
+            <div class="panel-header" style="border-bottom: none; flex-shrink: 0;">
+                <span style="font-size: 16px;">💬 Mural de Mensagens</span>
+            </div>
+            
+            <div class="comment-form" style="flex-shrink: 0;">
+                <input type="text" id="comentario-nome" placeholder="Seu nome (Ex: João Silva)" maxlength="50">
+                <textarea id="comentario-texto" rows="2" placeholder="✨ Deixe uma mensagem bem legal para a gente! Sugestões e feedbacks são muito bem-vindos! 🚀" maxlength="300"></textarea>
+                <button class="btn-filter" id="btn-enviar-comentario" onclick="enviarComentario()" style="width: 100%; background: #38ef7d; color: #000;">➕ Enviar Mensagem</button>
+            </div>
 
-        <div id="lista-comentarios" style="display: flex; flex-direction: column; gap: 15px;">
-            <div style="text-align: center; color: var(--text-muted); font-size: 13px;">Carregando mural...</div>
+            <div style="height: 1px; background: var(--border-color); margin: 10px 0 20px 0; flex-shrink: 0;"></div>
+
+            <div class="comments-list-scroll" id="lista-comentarios">
+                <div style="text-align: center; color: var(--text-muted); font-size: 13px;">Carregando mural...</div>
+            </div>
         </div>
-    </div>
-
-</div>
-
-<script type="module">
+    </div> </div> <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
     import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
@@ -306,7 +354,7 @@
         const textoStr = inputTexto.value.trim();
 
         if (!nomeStr || !textoStr) {
-            alert("⚠️ Por favor, preencha o seu nome e o comentário antes de enviar!");
+            alert("⚠️ Por favor, preencha o seu nome e a mensagem antes de enviar!");
             return;
         }
 
