@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estação Meteorológica IoT</title>
+    <title>Estação Meteorológica IoT - IF Goiano</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -28,7 +28,19 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
+            padding-bottom: 40px;
         }
+
+        /* Cabeçalho Institucional */
+        .main-header {
+            background: var(--card-bg);
+            padding: 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .main-title { margin: 0; font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; }
+        .main-subtitle { margin: 8px 0 0 0; font-size: 14px; color: var(--accent); font-weight: 500; }
+        .main-credits { margin: 6px 0 0 0; font-size: 12px; color: var(--text-muted); }
 
         /* Barra de Navegação Superior (Tabs) */
         .navbar {
@@ -41,34 +53,16 @@
         }
 
         .tab-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            padding: 16px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+            background: none; border: none; color: var(--text-muted); padding: 16px 20px;
+            font-size: 14px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s;
         }
-
         .tab-btn:hover { color: var(--text-main); }
-        .tab-btn.active {
-            color: var(--accent);
-            border-bottom: 2px solid var(--accent);
-        }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .container {
-            max-width: 1100px;
-            margin: 24px auto;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            padding: 0 20px;
-        }
+        .container { max-width: 1100px; margin: 24px auto; display: flex; flex-direction: column; gap: 24px; padding: 0 20px; }
 
         /* Cartões Principais */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
@@ -107,9 +101,28 @@
         .badge { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 600; letter-spacing: 0.5px; }
         .badge-live { background: rgba(78, 203, 126, 0.1); color: #4ecb7e; border: 1px solid rgba(78, 203, 126, 0.2); }
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+
+        /* SEÇÃO DE COMENTÁRIOS */
+        .comment-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .comment-form input, .comment-form textarea {
+            background: #161b27; border: 1px solid rgba(255,255,255,0.1); color: var(--text-main);
+            padding: 12px 16px; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; resize: vertical; transition: 0.3s;
+        }
+        .comment-form input:focus, .comment-form textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77, 158, 255, 0.1); }
+        .comment-box { background: #161b27; padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .comment-header { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+        .comment-name { font-weight: 600; font-size: 14px; color: var(--accent); }
+        .comment-date { font-size: 11px; color: var(--text-muted); }
+        .comment-text { font-size: 14px; color: var(--text-main); line-height: 1.6; }
     </style>
 </head>
 <body>
+
+<header class="main-header">
+    <h1 class="main-title">Estação Meteorológica Experimental e Didática</h1>
+    <p class="main-subtitle">IF Goiano Campus Campos Belos - Lab. Fábrica da Ciência</p>
+    <p class="main-credits">Desenvolvido por Luis Abreu e Prof. Marcelo Brandão</p>
+</header>
 
 <nav class="navbar">
     <button class="tab-btn active" onclick="abrirAba('aba-painel')">📊 Painel em Tempo Real</button>
@@ -121,47 +134,12 @@
 
     <div id="aba-painel" class="tab-content active">
         <div class="grid">
-            <div class="card">
-                <div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div>
-                <div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div>
-                <div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div>
-                <div class="card-sub">Sensor BMP280</div>
-            </div>
-
-            <div class="card">
-                <div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div>
-                <div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div>
-                <div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div>
-                <div class="card-sub">Sensor DHT11</div>
-            </div>
-
-            <div class="card">
-                <div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div>
-                <div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div>
-                <div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div>
-                <div class="card-sub">Sensor BMP280</div>
-            </div>
-
-            <div class="card">
-                <div class="card-top-line" style="background: linear-gradient(90deg, #b5179e, #7209b7);"></div>
-                <div class="card-header">Altitude Estimada <span style="font-size: 16px;">⛰️</span></div>
-                <div class="card-value" style="color: #b5179e;"><span id="val-altitude">--</span><span class="card-unit"> m</span></div>
-                <div class="card-sub">Sensor BMP280</div>
-            </div>
-
-            <div class="card">
-                <div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div>
-                <div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div>
-                <div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div>
-                <div class="card-sub" id="val-chuva-sub">Último pulso: --:--:--</div>
-            </div>
-
-            <div class="card">
-                <div class="card-top-line" style="background: linear-gradient(90deg, #f7c85e, #f9d98e);"></div>
-                <div class="card-header">Vento <span style="font-size: 16px;">💨</span></div>
-                <div class="card-value" style="color: #f7c85e;"><span id="val-vento">--</span><span class="card-unit"> km/h</span></div>
-                <div class="card-sub">Sensor Hall U1881</div>
-            </div>
+            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #ff6b6b, #ff8e8e);"></div><div class="card-header">Temperatura <span style="font-size: 16px;">🌡️</span></div><div class="card-value" style="color: #ff6b6b;"><span id="val-temp">--</span><span class="card-unit">°C</span></div><div class="card-sub">Sensor BMP280</div></div>
+            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #4d9eff, #6cb2ff);"></div><div class="card-header">Umidade do Ar <span style="font-size: 16px;">💧</span></div><div class="card-value" style="color: #4d9eff;"><span id="val-umid">--</span><span class="card-unit">%</span></div><div class="card-sub">Sensor DHT11</div></div>
+            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div><div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div><div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div><div class="card-sub">Sensor BMP280</div></div>
+            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #b5179e, #7209b7);"></div><div class="card-header">Altitude Estimada <span style="font-size: 16px;">⛰️</span></div><div class="card-value" style="color: #b5179e;"><span id="val-altitude">--</span><span class="card-unit"> m</span></div><div class="card-sub">Sensor BMP280</div></div>
+            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #0288d1, #26c6da);"></div><div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div><div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div><div class="card-sub" id="val-chuva-sub">Último pulso: --:--:--</div></div>
+            <div class="card"><div class="card-top-line" style="background: linear-gradient(90deg, #f7c85e, #f9d98e);"></div><div class="card-header">Vento <span style="font-size: 16px;">💨</span></div><div class="card-value" style="color: #f7c85e;"><span id="val-vento">--</span><span class="card-unit"> km/h</span></div><div class="card-sub">Sensor Hall U1881</div></div>
         </div>
 
         <div class="card" style="margin-top: 24px; padding: 24px 30px;">
@@ -169,21 +147,14 @@
                 <span>Monitoramento de Luminosidade (LDR)</span>
                 <span class="badge badge-live">AO VIVO</span>
             </div>
-            
             <div class="ldr-container">
                 <div class="ldr-icon" id="ldr-icon">--</div>
                 <div class="ldr-texto" id="ldr-texto">Aguardando dados...</div>
                 <div class="ldr-bruto" id="ldr-bruto">Valor bruto A0: -- / 1023</div>
             </div>
-
             <div style="margin-top: 30px;">
-                <div class="ldr-labels">
-                    <span>Breu Total (0)</span>
-                    <span>Pleno Sol (1023)</span>
-                </div>
-                <div class="ldr-track">
-                    <div class="ldr-fill" id="ldr-bar"></div>
-                </div>
+                <div class="ldr-labels"><span>Breu Total (0)</span><span>Pleno Sol (1023)</span></div>
+                <div class="ldr-track"><div class="ldr-fill" id="ldr-bar"></div></div>
             </div>
         </div>
     </div>
@@ -191,7 +162,6 @@
     <div id="aba-historico" class="tab-content">
         <div class="card">
             <div class="panel-header">Filtros Avançados e Relatórios</div>
-            
             <div class="filter-row">
                 <div class="filter-group">
                     <label>Tipo de Busca</label>
@@ -200,91 +170,67 @@
                         <option value="periodo">Período Customizado (Intervalo)</option>
                     </select>
                 </div>
-
                 <div id="grupo-especifico" class="filter-sub-group">
-                    <div class="filter-group">
-                        <label>Dia</label>
-                        <select id="filtro-dia">
-                            <option value="todos">Todos</option>
-                        </select>
-                    </div>
+                    <div class="filter-group"><label>Dia</label><select id="filtro-dia"><option value="todos">Todos</option></select></div>
                     <div class="filter-group">
                         <label>Mês</label>
                         <select id="filtro-mes">
                             <option value="todos">Todos</option>
-                            <option value="01">Janeiro</option>
-                            <option value="02">Fevereiro</option>
-                            <option value="03">Março</option>
-                            <option value="04">Abril</option>
-                            <option value="05">Maio</option>
-                            <option value="06">Junho</option>
-                            <option value="07">Julho</option>
-                            <option value="08">Agosto</option>
-                            <option value="09">Setembro</option>
-                            <option value="10">Outubro</option>
-                            <option value="11">Novembro</option>
-                            <option value="12">Dezembro</option>
+                            <option value="01">Janeiro</option><option value="02">Fevereiro</option><option value="03">Março</option>
+                            <option value="04">Abril</option><option value="05">Maio</option><option value="06">Junho</option>
+                            <option value="07">Julho</option><option value="08">Agosto</option><option value="09">Setembro</option>
+                            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label>Ano</label>
-                        <select id="filtro-ano">
-                            <option value="todos">Todos</option>
-                            <option value="2026">2026</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
-                        </select>
+                        <select id="filtro-ano"><option value="todos">Todos</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option></select>
                     </div>
                 </div>
-
                 <div id="grupo-periodo" class="filter-sub-group" style="display: none;">
                     <div class="filter-group"><label>Data Inicial</label><input type="date" id="data-inicio"></div>
                     <div class="filter-group"><label>Data Final</label><input type="date" id="data-fim"></div>
                 </div>
-
                 <button class="btn-filter" onclick="aplicarFiltros()">🔍 Filtrar</button>
                 <button class="btn-filter btn-pdf" onclick="exportarPDF()">⬇️ Exportar PDF</button>
             </div>
-
             <div style="overflow-x: auto;">
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Hora</th>
-                            <th>Temp.</th>
-                            <th>Umidade</th>
-                            <th>Pressão</th>
-                            <th>Altitude</th>
-                            <th>Luz</th>
-                            <th>Vento</th>
-                            <th>Chuva Acum.</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-busca">
-                        <tr><td colspan="9" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr>
-                    </tbody>
+                    <thead><tr><th>Data</th><th>Hora</th><th>Temp.</th><th>Umidade</th><th>Pressão</th><th>Altitude</th><th>Luz</th><th>Vento</th><th>Chuva Acum.</th></tr></thead>
+                    <tbody id="tabela-busca"><tr><td colspan="9" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <div id="aba-graficos" class="tab-content">
-        <div class="card" style="margin-bottom: 24px;">
-            <div class="panel-header">Gráfico de Precipitação (Chuva)</div>
-            <canvas id="graficoChuva" height="80"></canvas>
+        <div class="card" style="margin-bottom: 24px;"><div class="panel-header">Gráfico de Precipitação (Chuva)</div><canvas id="graficoChuva" height="80"></canvas></div>
+        <div class="card"><div class="panel-header">Gráfico de Vento (Anemômetro)</div><canvas id="graficoVento" height="80"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top: 30px;">
+        <div class="panel-header" style="border-bottom: none;">
+            <span style="font-size: 18px;">💬 Mural de Comentários do Projeto</span>
+        </div>
+        
+        <div class="comment-form">
+            <input type="text" id="comentario-nome" placeholder="Digite seu nome (Ex: Avaliador Silva, Aluno João...)" maxlength="50">
+            <textarea id="comentario-texto" rows="3" placeholder="O que você achou da nossa Estação Meteorológica?" maxlength="300"></textarea>
+            <button class="btn-filter" id="btn-enviar-comentario" onclick="enviarComentario()" style="width: 200px; background: #38ef7d; color: #000;">➕ Enviar Comentário</button>
         </div>
 
-        <div class="card">
-            <div class="panel-header">Gráfico de Vento (Anemômetro)</div>
-            <canvas id="graficoVento" height="80"></canvas>
+        <div style="height: 1px; background: var(--border-color); margin: 20px 0;"></div>
+
+        <div id="lista-comentarios" style="display: flex; flex-direction: column; gap: 15px;">
+            <div style="text-align: center; color: var(--text-muted); font-size: 13px;">Carregando mural...</div>
         </div>
     </div>
+
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+    import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
 
     const firebaseConfig = {
         databaseURL: "https://estacao-fisica-lab-if-default-rtdb.firebaseio.com"
@@ -298,9 +244,7 @@
     const comboDias = document.getElementById("filtro-dia");
     for (let i = 1; i <= 31; i++) {
         let d = String(i).padStart(2, '0');
-        let opt = document.createElement("option");
-        opt.value = d; opt.innerText = d;
-        comboDias.appendChild(opt);
+        let opt = document.createElement("option"); opt.value = d; opt.innerText = d; comboDias.appendChild(opt);
     }
 
     // Leitura em Tempo Real (Painel)
@@ -311,10 +255,7 @@
             document.getElementById("val-temp").innerText = dados.temperatura ? dados.temperatura.toFixed(1) : "0.0";
             document.getElementById("val-umid").innerText = dados.umidade ? dados.umidade.toFixed(0) : "0";
             document.getElementById("val-pressao").innerText = dados.pressao ? dados.pressao.toFixed(1) : "0.0";
-            
-            // Vinculação correta no novo elemento exclusivo da altitude
             document.getElementById("val-altitude").innerText = dados.altitude ? dados.altitude.toFixed(0) : "0";
-            
             document.getElementById("val-chuva").innerText = dados.chuva_mm ? dados.chuva_mm.toFixed(2) : "0.00";
             document.getElementById("val-chuva-sub").innerText = `Último pulso: ${dados.hora_ultima_chuva || "--:--:--"}`;
             document.getElementById("val-vento").innerText = dados.vento_kmh ? dados.vento_kmh.toFixed(1) : "0.0";
@@ -347,7 +288,78 @@
         }
     });
 
-    // Lógica de Filtragem e Renderização da Tabela
+    // ==========================================
+    // SISTEMA DE COMENTÁRIOS
+    // ==========================================
+    const comentariosRef = ref(db, "comentarios");
+    
+    window.enviarComentario = function() {
+        const inputNome = document.getElementById("comentario-nome");
+        const inputTexto = document.getElementById("comentario-texto");
+        const btnEnviar = document.getElementById("btn-enviar-comentario");
+
+        const nomeStr = inputNome.value.trim();
+        const textoStr = inputTexto.value.trim();
+
+        if (!nomeStr || !textoStr) {
+            alert("⚠️ Por favor, preencha o seu nome e o comentário antes de enviar!");
+            return;
+        }
+
+        btnEnviar.innerText = "⏳ Enviando...";
+        btnEnviar.disabled = true;
+
+        const novoComentario = {
+            nome: nomeStr,
+            texto: textoStr,
+            dataHora: new Date().toLocaleString("pt-BR")
+        };
+
+        // Envia para o Firebase no nó "comentarios"
+        push(comentariosRef, novoComentario).then(() => {
+            inputNome.value = "";
+            inputTexto.value = "";
+            btnEnviar.innerText = "➕ Enviar Comentário";
+            btnEnviar.disabled = false;
+        }).catch((error) => {
+            alert("Erro ao enviar. Verifique a conexão.");
+            btnEnviar.innerText = "➕ Enviar Comentário";
+            btnEnviar.disabled = false;
+        });
+    };
+
+    // Escuta e desenha os comentários em tempo real
+    onValue(comentariosRef, (snapshot) => {
+        const mural = document.getElementById("lista-comentarios");
+        mural.innerHTML = "";
+        const val = snapshot.val();
+
+        if (val) {
+            const comentariosArray = Object.values(val).reverse(); // Mais novos primeiro
+            comentariosArray.forEach(c => {
+                const div = document.createElement("div");
+                div.className = "comment-box";
+                
+                // Proteção básica contra injeção de HTML
+                const safeName = c.nome.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const safeText = c.texto.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+                const safeDate = c.dataHora || "--/--/----";
+
+                div.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-name">👤 ${safeName}</span>
+                        <span class="comment-date">${safeDate}</span>
+                    </div>
+                    <div class="comment-text">${safeText}</div>
+                `;
+                mural.appendChild(div);
+            });
+        } else {
+            mural.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">Nenhum comentário ainda. Seja o primeiro a apoiar o projeto! 🚀</div>`;
+        }
+    });
+
+    // Lógica de Filtragem
     window.aplicarFiltros = function() {
         const tipoBusca = document.getElementById("tipo-busca").value;
         const tbody = document.getElementById("tabela-busca");
@@ -365,12 +377,10 @@
                 return (diaSel === "todos" || diaSel === partesData[0]) && 
                        (mesSel === "todos" || mesSel === partesData[1]) && 
                        (anoSel === "todos" || anoSel === partesData[2]);
-
             } else {
                 const startStr = document.getElementById("data-inicio").value; 
                 const endStr = document.getElementById("data-fim").value;     
                 if (!startStr || !endStr) return true; 
-
                 const dataItem = new Date(parseInt(partesData[2]), parseInt(partesData[1]) - 1, parseInt(partesData[0]));
                 return dataItem >= new Date(startStr + "T00:00:00") && dataItem <= new Date(endStr + "T23:59:59");
             }
@@ -402,24 +412,18 @@
 </script>
 
 <script>
-    // ----------------------------------------------------
-    // FUNÇÃO GERADORA DO PDF CORPORATIVO
-    // ----------------------------------------------------
     function exportarPDF() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
         const rows = window.dadosAtuaisFiltro;
 
-        if(!rows || rows.length === 0) {
-            alert("Não há dados na tabela para exportar. Tente alterar o filtro.");
-            return;
-        }
+        if(!rows || rows.length === 0) { alert("Não há dados na tabela para exportar."); return; }
 
         doc.setFontSize(22); doc.setTextColor(33, 37, 41); doc.setFont("helvetica", "bold");
-        doc.text("EstAção IoT", 14, 22);
+        doc.text("Estação Meteorológica - IF Goiano", 14, 22);
 
         doc.setFontSize(11); doc.setTextColor(108, 117, 125); doc.setFont("helvetica", "normal");
-        doc.text("Relatório Oficial de Monitoramento Meteorológico", 14, 29);
+        doc.text("Lab. Fábrica da Ciência | Luis Abreu e Prof. Marcelo Brandão", 14, 29);
         
         doc.setDrawColor(77, 158, 255); doc.setLineWidth(0.8); doc.line(14, 34, 196, 34);
 
@@ -435,17 +439,14 @@
         const maxPorDia = {};
         rows.forEach(r => {
             const val = Number(r.chuva_mm) || 0;
-            if(r.data && (maxPorDia[r.data] === undefined || val > maxPorDia[r.data])) {
-                maxPorDia[r.data] = val;
-            }
+            if(r.data && (maxPorDia[r.data] === undefined || val > maxPorDia[r.data])) { maxPorDia[r.data] = val; }
         });
         const totalChuva = Object.values(maxPorDia).reduce((a, b) => a + b, 0).toFixed(1);
 
         doc.text(`Chuva Total Acumulada no Período: ${totalChuva} mm`, 90, 57);
 
         const bodyData = rows.map(r => [
-            r.data || "--/--/----",
-            r.hora || "--:--",
+            r.data || "--/--/----", r.hora || "--:--",
             r.temperatura ? r.temperatura.toFixed(1) + "°C" : "—",
             r.umidade ? r.umidade.toFixed(0) + "%" : "—",
             r.pressao ? r.pressao.toFixed(0) + " hPa" : "—",
@@ -456,10 +457,8 @@
         ]);
 
         doc.autoTable({
-            startY: 70,
-            head: [["Data", "Hora", "Temp.", "Umid.", "Press.", "Alt.", "Luz", "Vento", "Chuva"]],
-            body: bodyData,
-            theme: 'grid',
+            startY: 70, head: [["Data", "Hora", "Temp.", "Umid.", "Press.", "Alt.", "Luz", "Vento", "Chuva"]],
+            body: bodyData, theme: 'grid',
             headStyles: { fillColor: [77, 158, 255], textColor: 255, fontStyle: "bold", fontSize: 8 },
             styles: { fontSize: 8, textColor: [73, 80, 87], cellPadding: 3, lineColor: [222, 226, 230], lineWidth: 0.1 },
             alternateRowStyles: { fillColor: [248, 249, 250] },
@@ -468,17 +467,12 @@
         doc.save(`Relatorio-EstacaoIoT-${Date.now()}.pdf`);
     }
 
-    // ----------------------------------------------------
-    // FUNÇÕES DE INTERFACE E GRÁFICOS
-    // ----------------------------------------------------
     function alternarCamposFiltro() {
         const tipo = document.getElementById("tipo-busca").value;
         if (tipo === "especifica") {
-            document.getElementById("grupo-especifico").style.display = "flex";
-            document.getElementById("grupo-periodo").style.display = "none";
+            document.getElementById("grupo-especifico").style.display = "flex"; document.getElementById("grupo-periodo").style.display = "none";
         } else {
-            document.getElementById("grupo-especifico").style.display = "none";
-            document.getElementById("grupo-periodo").style.display = "flex";
+            document.getElementById("grupo-especifico").style.display = "none"; document.getElementById("grupo-periodo").style.display = "flex";
         }
     }
 
@@ -495,26 +489,22 @@
 
         const ctxChuva = document.getElementById('graficoChuva').getContext('2d');
         chartChuva = new Chart(ctxChuva, {
-            type: 'bar',
-            data: { labels: [], datasets: [{ label: 'Chuva Acumulada (mm)', data: [], backgroundColor: '#5ecbe8', borderRadius: 4 }] },
+            type: 'bar', data: { labels: [], datasets: [{ label: 'Chuva Acumulada (mm)', data: [], backgroundColor: '#5ecbe8', borderRadius: 4 }] },
             options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
         });
 
         const ctxVento = document.getElementById('graficoVento').getContext('2d');
         chartVento = new Chart(ctxVento, {
-            type: 'line',
-            data: { labels: [], datasets: [{ label: 'Velocidade do Vento (km/h)', data: [], borderColor: '#f7c85e', backgroundColor: 'rgba(247,200,94,0.1)', borderWidth: 2, fill: true, tension: 0.3 }] },
+            type: 'line', data: { labels: [], datasets: [{ label: 'Velocidade do Vento (km/h)', data: [], borderColor: '#f7c85e', backgroundColor: 'rgba(247,200,94,0.1)', borderWidth: 2, fill: true, tension: 0.3 }] },
             options: { responsive: true, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
         });
     }
 
     function atualizarGraficos(dadosRecentes) {
         if (!chartChuva || !chartVento) inicializarGraficos();
-
         const labelsGrafico = dadosRecentes.map(item => item.hora || "");
         const dadosChuva = dadosRecentes.map(item => item.chuva_mm || 0);
         const dadosVento = dadosRecentes.map(item => item.vento_kmh || 0); 
-
         chartChuva.data.labels = labelsGrafico; chartChuva.data.datasets[0].data = dadosChuva; chartChuva.update();
         chartVento.data.labels = labelsGrafico; chartVento.data.datasets[0].data = dadosVento; chartVento.update();
     }
