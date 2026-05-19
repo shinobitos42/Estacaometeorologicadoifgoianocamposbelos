@@ -62,7 +62,7 @@
         .tab-content.active { display: block; }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 24px auto;
             display: flex;
             flex-direction: column;
@@ -71,12 +71,12 @@
         }
 
         /* Cartões Principais */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
         .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px 18px 16px; position: relative; overflow: hidden; }
         .card-top-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
         .card-header { font-size: 13px; font-weight: 500; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .card-value { font-size: 28px; font-weight: 600; margin: 4px 0; }
-        .card-unit { font-size: 16px; font-weight: 400; color: var(--text-muted); }
+        .card-value { font-size: 26px; font-weight: 600; margin: 4px 0; }
+        .card-unit { font-size: 15px; font-weight: 400; color: var(--text-muted); }
         .card-sub { font-size: 11px; color: #555c70; margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 8px; }
 
         /* Estilos Visuais Premium do LDR */
@@ -139,7 +139,14 @@
                 <div class="card-top-line" style="background: linear-gradient(90deg, #11998e, #38ef7d);"></div>
                 <div class="card-header">Pressão Atmosférica <span style="font-size: 16px;">🎈</span></div>
                 <div class="card-value" style="color: #38ef7d;"><span id="val-pressao">--</span><span class="card-unit"> hPa</span></div>
-                <div class="card-sub" id="val-altitude">Altitude estimada: -- m</div>
+                <div class="card-sub">Sensor BMP280</div>
+            </div>
+
+            <div class="card">
+                <div class="card-top-line" style="background: linear-gradient(90deg, #b5179e, #7209b7);"></div>
+                <div class="card-header">Altitude Estimada <span style="font-size: 16px;">⛰️</span></div>
+                <div class="card-value" style="color: #b5179e;"><span id="val-altitude">--</span><span class="card-unit"> m</span></div>
+                <div class="card-sub">Sensor BMP280</div>
             </div>
 
             <div class="card">
@@ -147,6 +154,13 @@
                 <div class="card-header">Chuva Acumulada <span style="font-size: 16px;">🌧️</span></div>
                 <div class="card-value" style="color: #5ecbe8;"><span id="val-chuva">--</span><span class="card-unit"> mm</span></div>
                 <div class="card-sub" id="val-chuva-sub">Último pulso: --:--:--</div>
+            </div>
+
+            <div class="card">
+                <div class="card-top-line" style="background: linear-gradient(90deg, #f7c85e, #f9d98e);"></div>
+                <div class="card-header">Vento <span style="font-size: 16px;">💨</span></div>
+                <div class="card-value" style="color: #f7c85e;"><span id="val-vento">--</span><span class="card-unit"> km/h</span></div>
+                <div class="card-sub">Sensor Hall U1881</div>
             </div>
         </div>
 
@@ -242,12 +256,13 @@
                             <th>Umidade</th>
                             <th>Pressão</th>
                             <th>Altitude</th>
-                            <th>Luz (LDR)</th>
+                            <th>Luz</th>
+                            <th>Vento</th>
                             <th>Chuva Acum.</th>
                         </tr>
                     </thead>
                     <tbody id="tabela-busca">
-                        <tr><td colspan="8" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr>
+                        <tr><td colspan="9" style="text-align: center; color: #555c70;">Aguardando dados...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -278,7 +293,7 @@
     const db = getDatabase(app);
 
     window.historicoGlobal = [];
-    window.dadosAtuaisFiltro = []; // Variável que o PDF vai usar para imprimir
+    window.dadosAtuaisFiltro = []; 
 
     const comboDias = document.getElementById("filtro-dia");
     for (let i = 1; i <= 31; i++) {
@@ -296,10 +311,14 @@
             document.getElementById("val-temp").innerText = dados.temperatura ? dados.temperatura.toFixed(1) : "0.0";
             document.getElementById("val-umid").innerText = dados.umidade ? dados.umidade.toFixed(0) : "0";
             document.getElementById("val-pressao").innerText = dados.pressao ? dados.pressao.toFixed(1) : "0.0";
-            document.getElementById("val-altitude").innerText = `Altitude estimada: ${dados.altitude ? dados.altitude.toFixed(0) : "0"}m`;
+            
+            // Vinculação correta no novo elemento exclusivo da altitude
+            document.getElementById("val-altitude").innerText = dados.altitude ? dados.altitude.toFixed(0) : "0";
+            
             document.getElementById("val-chuva").innerText = dados.chuva_mm ? dados.chuva_mm.toFixed(2) : "0.00";
             document.getElementById("val-chuva-sub").innerText = `Último pulso: ${dados.hora_ultima_chuva || "--:--:--"}`;
-            
+            document.getElementById("val-vento").innerText = dados.vento_kmh ? dados.vento_kmh.toFixed(1) : "0.0";
+
             let ldr = dados.luminosidade || 0;
             let ldrLabel = "Plena luz solar"; let ldrIcon = "☀️"; let ldrColor = "#f7c85e"; 
 
@@ -357,10 +376,10 @@
             }
         });
 
-        window.dadosAtuaisFiltro = dadosFiltrados; // Salva para o PDF usar
+        window.dadosAtuaisFiltro = dadosFiltrados; 
 
         if (dadosFiltrados.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #555c70; padding: 30px;">Nenhum registro encontrado.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #555c70; padding: 30px;">Nenhum registro encontrado.</td></tr>`;
             return;
         }
 
@@ -372,8 +391,9 @@
                 <td style="color: #ff6b6b;">${item.temperatura ? item.temperatura.toFixed(1) + "°C" : "—"}</td>
                 <td style="color: #4d9eff;">${item.umidade ? item.umidade.toFixed(0) + "%" : "—"}</td>
                 <td style="color: #38ef7d;">${item.pressao ? item.pressao.toFixed(0) + " hPa" : "—"}</td>
-                <td style="color: #a8e6cf;">${item.altitude ? item.altitude.toFixed(0) + " m" : "—"}</td>
-                <td style="color: #f7c85e;">${item.luminosidade || 0} luz</td>
+                <td style="color: #b5179e;">${item.altitude ? item.altitude.toFixed(0) + " m" : "—"}</td>
+                <td style="color: #f7c85e;">${item.luminosidade || 0} lux</td>
+                <td style="color: #f9d98e;">${item.vento_kmh ? item.vento_kmh.toFixed(1) + " km/h" : "0.0 km/h"}</td>
                 <td style="color: #5ecbe8; font-weight: bold;">${item.chuva_mm ? item.chuva_mm.toFixed(2) + " mm" : "0.00 mm"}</td>
             `;
             tbody.appendChild(tr);
@@ -395,36 +415,23 @@
             return;
         }
 
-        // Cabeçalho da página
-        doc.setFontSize(22);
-        doc.setTextColor(33, 37, 41);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22); doc.setTextColor(33, 37, 41); doc.setFont("helvetica", "bold");
         doc.text("EstAção IoT", 14, 22);
 
-        doc.setFontSize(11);
-        doc.setTextColor(108, 117, 125);
-        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11); doc.setTextColor(108, 117, 125); doc.setFont("helvetica", "normal");
         doc.text("Relatório Oficial de Monitoramento Meteorológico", 14, 29);
         
-        // Linha Azul de Destaque
-        doc.setDrawColor(77, 158, 255);
-        doc.setLineWidth(0.8);
-        doc.line(14, 34, 196, 34);
+        doc.setDrawColor(77, 158, 255); doc.setLineWidth(0.8); doc.line(14, 34, 196, 34);
 
-        doc.setFontSize(10);
-        doc.setTextColor(73, 80, 87);
+        doc.setFontSize(10); doc.setTextColor(73, 80, 87);
         doc.text(`Emitido em: ${new Date().toLocaleString("pt-BR")}`, 14, 42);
 
-        // Caixa de Resumo (Background Cinza)
-        doc.setDrawColor(222, 226, 230);
-        doc.setFillColor(248, 249, 250);
+        doc.setDrawColor(222, 226, 230); doc.setFillColor(248, 249, 250);
         doc.roundedRect(14, 47, 182, 18, 2, 2, "FD");
 
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9); doc.setFont("helvetica", "bold");
         doc.text(`Total de Registros: ${rows.length}`, 20, 57);
 
-        // Calcula a chuva total somando apenas o valor máximo de cada dia
         const maxPorDia = {};
         rows.forEach(r => {
             const val = Number(r.chuva_mm) || 0;
@@ -436,7 +443,6 @@
 
         doc.text(`Chuva Total Acumulada no Período: ${totalChuva} mm`, 90, 57);
 
-        // Formatação dos Dados da Tabela
         const bodyData = rows.map(r => [
             r.data || "--/--/----",
             r.hora || "--:--",
@@ -444,27 +450,26 @@
             r.umidade ? r.umidade.toFixed(0) + "%" : "—",
             r.pressao ? r.pressao.toFixed(0) + " hPa" : "—",
             r.altitude ? r.altitude.toFixed(0) + " m" : "—",
-            (r.luminosidade || 0) + " luz",
+            (r.luminosidade || 0) + " lux",
+            r.vento_kmh ? r.vento_kmh.toFixed(1) + " km/h" : "0.0 km/h",
             r.chuva_mm ? r.chuva_mm.toFixed(2) + " mm" : "0.00 mm"
         ]);
 
-        // Desenha a Tabela usando o plugin AutoTable
         doc.autoTable({
             startY: 70,
-            head: [["Data", "Hora", "Temp.", "Umidade", "Pressão", "Altitude", "Luz (LDR)", "Chuva Acum."]],
+            head: [["Data", "Hora", "Temp.", "Umid.", "Press.", "Alt.", "Luz", "Vento", "Chuva"]],
             body: bodyData,
             theme: 'grid',
-            headStyles: { fillColor: [77, 158, 255], textColor: 255, fontStyle: "bold", fontSize: 9 },
-            styles: { fontSize: 9, textColor: [73, 80, 87], cellPadding: 4, lineColor: [222, 226, 230], lineWidth: 0.1 },
+            headStyles: { fillColor: [77, 158, 255], textColor: 255, fontStyle: "bold", fontSize: 8 },
+            styles: { fontSize: 8, textColor: [73, 80, 87], cellPadding: 3, lineColor: [222, 226, 230], lineWidth: 0.1 },
             alternateRowStyles: { fillColor: [248, 249, 250] },
         });
 
-        // Dispara o download
         doc.save(`Relatorio-EstacaoIoT-${Date.now()}.pdf`);
     }
 
     // ----------------------------------------------------
-    // FUNÇÕES DE INTERFACE
+    // FUNÇÕES DE INTERFACE E GRÁFICOS
     // ----------------------------------------------------
     function alternarCamposFiltro() {
         const tipo = document.getElementById("tipo-busca").value;
@@ -484,9 +489,6 @@
         event.currentTarget.classList.add('active');
     }
 
-    // ----------------------------------------------------
-    // GRÁFICOS (CHART.JS)
-    // ----------------------------------------------------
     let chartChuva, chartVento;
     function inicializarGraficos() {
         Chart.defaults.color = '#8b90a0'; Chart.defaults.font.family = '-apple-system, sans-serif';
