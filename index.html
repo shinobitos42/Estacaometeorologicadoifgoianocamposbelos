@@ -114,6 +114,10 @@
         .comment-name { font-weight: 600; font-size: 14px; color: var(--accent); }
         .comment-date { font-size: 11px; color: var(--text-muted); }
         .comment-text { font-size: 14px; color: var(--text-main); line-height: 1.6; }
+        
+        /* Estilo da mensagem vazia */
+        .empty-mural { text-align: center; color: var(--text-main); font-size: 14px; padding: 30px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1); }
+        .empty-mural span { color: var(--accent); font-weight: bold; font-size: 16px; display: block; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -121,7 +125,7 @@
 <header class="main-header">
     <h1 class="main-title">Estação Meteorológica Experimental e Didática</h1>
     <p class="main-subtitle">IF Goiano Campus Campos Belos - Lab. Fábrica da Ciência</p>
-    <p class="main-credits">Desenvolvido por Luis Abreu e Prof. Marcelo Brandão</p>
+    <p class="main-credits">Desenvolvido por Luis Abreu, Prof. Marcelo Brandão e Gusthavo D. Olivera</p>
 </header>
 
 <nav class="navbar">
@@ -210,13 +214,13 @@
 
     <div class="card" style="margin-top: 30px;">
         <div class="panel-header" style="border-bottom: none;">
-            <span style="font-size: 18px;">💬 Mural de Comentários do Projeto</span>
+            <span style="font-size: 18px;">💬 Mural de Mensagens</span>
         </div>
         
         <div class="comment-form">
-            <input type="text" id="comentario-nome" placeholder="Digite seu nome (Ex: Avaliador Silva, Aluno João...)" maxlength="50">
-            <textarea id="comentario-texto" rows="3" placeholder="O que você achou da nossa Estação Meteorológica?" maxlength="300"></textarea>
-            <button class="btn-filter" id="btn-enviar-comentario" onclick="enviarComentario()" style="width: 200px; background: #38ef7d; color: #000;">➕ Enviar Comentário</button>
+            <input type="text" id="comentario-nome" placeholder="Seu nome (Ex: João Silva)" maxlength="50">
+            <textarea id="comentario-texto" rows="3" placeholder="✨ Deixe uma mensagem para a gente! Sugestões e feedbacks são bem vindos!" maxlength="300"></textarea>
+            <button class="btn-filter" id="btn-enviar-comentario" onclick="enviarComentario()" style="width: 200px; background: #38ef7d; color: #000;">➕ Enviar Mensagem</button>
         </div>
 
         <div style="height: 1px; background: var(--border-color); margin: 20px 0;"></div>
@@ -319,11 +323,11 @@
         push(comentariosRef, novoComentario).then(() => {
             inputNome.value = "";
             inputTexto.value = "";
-            btnEnviar.innerText = "➕ Enviar Comentário";
+            btnEnviar.innerText = "➕ Enviar Mensagem";
             btnEnviar.disabled = false;
         }).catch((error) => {
             alert("Erro ao enviar. Verifique a conexão.");
-            btnEnviar.innerText = "➕ Enviar Comentário";
+            btnEnviar.innerText = "➕ Enviar Mensagem";
             btnEnviar.disabled = false;
         });
     };
@@ -355,7 +359,12 @@
                 mural.appendChild(div);
             });
         } else {
-            mural.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">Nenhum comentário ainda. Seja o primeiro a apoiar o projeto! 🚀</div>`;
+            mural.innerHTML = `
+                <div class="empty-mural">
+                    <span>✨ O mural está vazio! ✨</span>
+                    Deixe uma mensagem para a gente e seja o primeiro a apoiar o projeto! 👇🚀
+                </div>
+            `;
         }
     });
 
@@ -423,7 +432,7 @@
         doc.text("Estação Meteorológica - IF Goiano", 14, 22);
 
         doc.setFontSize(11); doc.setTextColor(108, 117, 125); doc.setFont("helvetica", "normal");
-        doc.text("Lab. Fábrica da Ciência | Luis Abreu e Prof. Marcelo Brandão", 14, 29);
+        doc.text("Lab. Fábrica da Ciência | Luis Abreu, Prof. Marcelo Brandão e Gusthavo D. Olivera", 14, 29);
         
         doc.setDrawColor(77, 158, 255); doc.setLineWidth(0.8); doc.line(14, 34, 196, 34);
 
